@@ -27,7 +27,16 @@ export const propertyQuerySchema = z.object({
   search: z.string().trim().optional(),
   location: z.string().trim().optional(),
   bedrooms: z.coerce.number().int().min(0).optional(),
+  propertyType: z.string().trim().optional(),
   status: z.enum(['available', 'sold', 'reserved']).optional(),
+  featured: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) return undefined;
+      if (typeof value === 'boolean') return value;
+      return value === 'true';
+    }),
   sort: z.enum(['price_asc', 'price_desc', 'newest']).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(50).optional().default(12),

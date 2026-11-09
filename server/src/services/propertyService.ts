@@ -20,7 +20,9 @@ export async function listProperties(query: PropertyQueryInput): Promise<Paginat
     search,
     location,
     bedrooms,
+    propertyType,
     status,
+    featured,
     sort = 'newest',
     page = 1,
     limit = 12,
@@ -43,8 +45,16 @@ export async function listProperties(query: PropertyQueryInput): Promise<Paginat
     filter.bedrooms = bedrooms;
   }
 
+  if (propertyType) {
+    filter.propertyType = { $regex: `^${propertyType}$`, $options: 'i' };
+  }
+
   if (status) {
     filter.status = status;
+  }
+
+  if (featured !== undefined) {
+    filter.featured = featured;
   }
 
   let sortOption: Record<string, SortOrder> = { createdAt: -1 };
