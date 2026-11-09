@@ -4,8 +4,8 @@ A full-stack luxury real estate application for exploring residences and managin
 
 ## Stack
 
-- **Frontend:** React (Vite), Tailwind CSS, React Router, Axios, Lucide React
-- **Backend:** Node.js, Express, MongoDB, Mongoose, Zod
+- **Frontend:** React + TypeScript (Vite), Tailwind CSS, React Router, Axios, Lucide React
+- **Backend:** Node.js + TypeScript, Express, MongoDB, Mongoose, Zod, tsx
 - **Package manager:** npm
 
 ## Project structure
@@ -67,6 +67,14 @@ Or separately:
 ```bash
 npm run dev:server
 npm run dev:client
+```
+
+Typecheck and production builds:
+
+```bash
+npm run typecheck
+npm run build
+npm run start   # runs compiled backend from server/dist
 ```
 
 - Frontend: http://localhost:5173

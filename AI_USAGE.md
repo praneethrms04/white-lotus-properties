@@ -38,6 +38,16 @@ This document records how AI assistance was used during development.
 - Modular file structure instead of single-file implementations
 - Real MongoDB-backed API routes instead of mock-only responses
 
+## Phase 1.5 — TypeScript migration
+
+AI assisted the migration of existing Phase 1 JavaScript sources to strict TypeScript across `client` and `server` without changing API contracts or business logic.
+
+Verification performed after migration:
+- Frontend and backend `typecheck`
+- Frontend and backend production `build`
+- MongoDB connection + `GET /api/health` + `GET /api/properties`
+- Frontend Vite startup and production preview
+
 ## Notes for reviewers
 
 AI accelerated boilerplate and consistent structure. Human judgment guided architecture choices, dependency selection, and verification of the health endpoint before claiming readiness.
