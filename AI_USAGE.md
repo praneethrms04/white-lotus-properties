@@ -53,6 +53,11 @@ This document records how AI assistance was used during development.
 - Real MongoDB-backed API routes instead of mock-only responses
 - Strict TypeScript without `any`, `@ts-ignore`, or `@ts-nocheck`
 
+6. **Phase 3 — Premium public UI**
+   - Redesigned homepage, property collection page, detail gallery, and public chrome.
+   - Polished admin dashboard/sidebar presentation without changing CRUD contracts.
+   - Extended property listing filters with optional `propertyType` and `featured` query params.
+
 ## Notes for reviewers
 
-AI accelerated implementation and structure. Human review should focus on UX polish, admin auth before production, and commit boundaries before merge.
+AI accelerated implementation and structure. Human review should focus on visual QA across breakpoints, admin auth before production, and commit boundaries before merge.

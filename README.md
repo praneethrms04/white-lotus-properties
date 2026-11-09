@@ -22,8 +22,9 @@ white-lotus-property-manager/
 ## Features
 
 ### Public showcase
-- Browse luxury property listings
-- View property detail pages with imagery, amenities, and pricing
+- Premium homepage with hero, featured residences, and brand storytelling
+- Browse and filter the property collection (`/properties`)
+- View property detail pages with gallery, amenities, and pricing
 - Submit buyer inquiries linked to a specific property
 
 ### Admin portal
@@ -110,7 +111,7 @@ npm run start   # runs compiled backend from server/dist
 - `GET /api/health`
 
 ### Properties
-- `GET /api/properties` — query: `search`, `location`, `bedrooms`, `status`, `sort`, `page`, `limit`
+- `GET /api/properties` — query: `search`, `location`, `bedrooms`, `propertyType`, `status`, `featured`, `sort`, `page`, `limit`
 - `GET /api/properties/:id`
 - `POST /api/properties`
 - `PUT /api/properties/:id`
@@ -135,7 +136,8 @@ All responses use a consistent envelope:
 
 ## Frontend routes
 
-- `/` — Public property showcase
+- `/` — Public homepage
+- `/properties` — Property collection with filters
 - `/properties/:id` — Property detail + inquiry form
 - `/admin` — Admin dashboard
 - `/admin/properties` — Property management
