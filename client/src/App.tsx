@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import ScrollToTop from './components/ScrollToTop';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/HomePage';
@@ -11,22 +12,25 @@ import AdminInquiriesPage from './pages/admin/AdminInquiriesPage';
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/properties" element={<PropertiesPage />} />
-        <Route path="/properties/:id" element={<PropertyDetailPage />} />
-      </Route>
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/properties/:id" element={<PropertyDetailPage />} />
+        </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="properties" element={<AdminPropertiesPage />} />
-        <Route path="properties/new" element={<AdminPropertyFormPage />} />
-        <Route path="properties/:id/edit" element={<AdminPropertyFormPage />} />
-        <Route path="inquiries" element={<AdminInquiriesPage />} />
-      </Route>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="properties" element={<AdminPropertiesPage />} />
+          <Route path="properties/new" element={<AdminPropertyFormPage />} />
+          <Route path="properties/:id/edit" element={<AdminPropertyFormPage />} />
+          <Route path="inquiries" element={<AdminInquiriesPage />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
