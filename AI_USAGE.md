@@ -4,7 +4,7 @@ This document records how AI assistance was used during development.
 
 ## Tools used
 
-- Cursor Agent (Composer) for scaffolding, backend foundation, and frontend foundation
+- Cursor Agent (Composer) for scaffolding, TypeScript migration, and Phase 2 feature implementation
 
 ## How AI was used
 
@@ -23,12 +23,26 @@ This document records how AI assistance was used during development.
    - Created reusable Button, Input, Loading, Empty, and Error components.
    - Applied a luxury visual direction with ivory, charcoal, and muted gold theming.
 
-## What was done manually / verified by the developer
+4. **Phase 1.5 — TypeScript migration**
+   - Migrated existing JavaScript sources to strict TypeScript across `client` and `server`.
+   - Preserved API contracts and business behavior.
 
-- Confirmed Node/npm versions locally
-- Created and reviewed environment files (`.env` / `.env.example`)
-- Started the API and verified the health endpoint response
-- Reviewed generated architecture for modularity and maintainability
+5. **Phase 2 — Property CRUD & inquiry workflows**
+   - Extracted backend services for properties and inquiries.
+   - Extended inquiry APIs with pagination, detail retrieval, search, and status updates.
+   - Built admin property management (list/search/filter/create/edit/delete).
+   - Added public inquiry form on property detail pages.
+   - Built admin inquiry dashboard with search, status filter, and status updates.
+   - Updated README with feature and API documentation.
+
+## What was verified
+
+- Frontend and backend TypeScript checks
+- Frontend and backend production builds
+- MongoDB connection
+- Property create/list/get/update/delete against live MongoDB
+- Inquiry create/list/get/status-update against live MongoDB
+- Frontend Vite startup for Phase 2 screens
 
 ## Guardrails followed
 
@@ -37,17 +51,8 @@ This document records how AI assistance was used during development.
 - Separate frontend and backend apps
 - Modular file structure instead of single-file implementations
 - Real MongoDB-backed API routes instead of mock-only responses
-
-## Phase 1.5 — TypeScript migration
-
-AI assisted the migration of existing Phase 1 JavaScript sources to strict TypeScript across `client` and `server` without changing API contracts or business logic.
-
-Verification performed after migration:
-- Frontend and backend `typecheck`
-- Frontend and backend production `build`
-- MongoDB connection + `GET /api/health` + `GET /api/properties`
-- Frontend Vite startup and production preview
+- Strict TypeScript without `any`, `@ts-ignore`, or `@ts-nocheck`
 
 ## Notes for reviewers
 
-AI accelerated boilerplate and consistent structure. Human judgment guided architecture choices, dependency selection, and verification of the health endpoint before claiming readiness.
+AI accelerated implementation and structure. Human review should focus on UX polish, admin auth before production, and commit boundaries before merge.
