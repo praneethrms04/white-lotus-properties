@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { deleteProperty, fetchProperties } from '../../api/properties';
 import Alert from '../../components/ui/Alert';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
@@ -9,58 +8,51 @@ import ErrorState from '../../components/ui/ErrorState';
 import Input from '../../components/ui/Input';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import StatusBadge from '../../components/ui/StatusBadge';
-import type { Property, PropertyStatus } from '../../types';
+import { useDeleteProperty } from '../../hooks/mutations/useDeleteProperty';
+import { useProperties } from '../../hooks/queries/useProperties';
+import type { PropertyFilters, PropertyStatus } from '../../types';
 import { formatPrice } from '../../utils/format';
 
+const defaultFilters: PropertyFilters = {
+  limit: 50,
+  sort: 'newest',
+};
+
 export default function AdminPropertiesPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PropertyStatus | ''>('');
+  const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
-  async function loadProperties(nextSearch = search, nextStatus = status) {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetchProperties({
-        search: nextSearch || undefined,
-        status: nextStatus || undefined,
-        limit: 50,
-        sort: 'newest',
-      });
-      setProperties(response.data || []);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load properties';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const propertiesQuery = useProperties(filters);
+  const deletePropertyMutation = useDeleteProperty();
 
-  useEffect(() => {
-    void loadProperties();
-  }, []);
+  const properties = propertiesQuery.data?.data || [];
+  const loading = propertiesQuery.isLoading;
+  const error = propertiesQuery.error?.message || '';
+
+  function applyFilters() {
+    setFilters({
+      search: search.trim() || undefined,
+      status: status || undefined,
+      limit: 50,
+      sort: 'newest',
+    });
+  }
 
   async function handleDelete() {
     if (!deletingId) return;
 
     try {
-      setDeleteLoading(true);
       setActionError('');
-      await deleteProperty(deletingId);
-      setProperties((current) => current.filter((property) => property._id !== deletingId));
+      await deletePropertyMutation.mutateAsync(deletingId);
       setActionSuccess('Property deleted successfully.');
       setDeletingId(null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete property';
       setActionError(message);
-    } finally {
-      setDeleteLoading(false);
     }
   }
 
@@ -100,11 +92,7 @@ export default function AdminPropertiesPage() {
           <option value="sold">Sold</option>
         </Input>
         <div className="flex items-end">
-          <Button
-            variant="secondary"
-            className="w-full md:w-auto"
-            onClick={() => void loadProperties(search, status)}
-          >
+          <Button variant="secondary" className="w-full md:w-auto" onClick={applyFilters}>
             Apply
           </Button>
         </div>
@@ -115,7 +103,7 @@ export default function AdminPropertiesPage() {
 
       {loading ? <LoadingSpinner label="Loading properties" /> : null}
       {!loading && error ? (
-        <ErrorState message={error} onRetry={() => void loadProperties()} />
+        <ErrorState message={error} onRetry={() => void propertiesQuery.refetch()} />
       ) : null}
       {!loading && !error && properties.length === 0 ? (
         <EmptyState
@@ -208,7 +196,7 @@ export default function AdminPropertiesPage() {
         title="Delete property?"
         description="This permanently removes the listing from MongoDB. This action cannot be undone."
         confirmLabel="Delete"
-        loading={deleteLoading}
+        loading={deletePropertyMutation.isPending}
         onCancel={() => setDeletingId(null)}
         onConfirm={() => void handleDelete()}
       />

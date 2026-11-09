@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { fetchInquiries, updateInquiryStatus } from '../../api/inquiries';
+import { useState } from 'react';
 import Alert from '../../components/ui/Alert';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
@@ -7,7 +6,9 @@ import ErrorState from '../../components/ui/ErrorState';
 import Input from '../../components/ui/Input';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import StatusBadge from '../../components/ui/StatusBadge';
-import type { Inquiry, InquiryPropertySummary, InquiryStatus } from '../../types';
+import { useUpdateInquiryStatus } from '../../hooks/mutations/useUpdateInquiryStatus';
+import { useInquiries } from '../../hooks/queries/useInquiries';
+import type { Inquiry, InquiryFilters, InquiryPropertySummary, InquiryStatus } from '../../types';
 import { formatDate } from '../../utils/format';
 
 function getPropertyName(property: Inquiry['property'] | null | undefined): string {
@@ -22,47 +23,37 @@ function getPropertyId(property: Inquiry['property'] | null | undefined): string
   return property._id;
 }
 
+const defaultFilters: InquiryFilters = { limit: 50 };
+
 export default function AdminInquiriesPage() {
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<InquiryStatus | ''>('');
+  const [filters, setFilters] = useState<InquiryFilters>(defaultFilters);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
-  async function loadInquiries(nextSearch = search, nextStatus = status) {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetchInquiries({
-        search: nextSearch || undefined,
-        status: nextStatus || undefined,
-        limit: 50,
-      });
-      setInquiries(response.data || []);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load inquiries';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const inquiriesQuery = useInquiries(filters);
+  const updateStatusMutation = useUpdateInquiryStatus();
 
-  useEffect(() => {
-    void loadInquiries();
-  }, []);
+  const inquiries = inquiriesQuery.data?.data || [];
+  const loading = inquiriesQuery.isLoading;
+  const error = inquiriesQuery.error?.message || '';
+
+  function applyFilters() {
+    setFilters({
+      search: search.trim() || undefined,
+      status: status || undefined,
+      limit: 50,
+    });
+  }
 
   async function handleStatusChange(id: string, nextStatus: InquiryStatus) {
     try {
       setUpdatingId(id);
       setActionError('');
       setActionSuccess('');
-      const response = await updateInquiryStatus(id, nextStatus);
-      setInquiries((current) =>
-        current.map((inquiry) => (inquiry._id === id ? response.data : inquiry))
-      );
+      await updateStatusMutation.mutateAsync({ id, status: nextStatus });
       setActionSuccess('Inquiry status updated.');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update status';
@@ -103,11 +94,7 @@ export default function AdminInquiriesPage() {
           <option value="closed">Closed</option>
         </Input>
         <div className="flex items-end">
-          <Button
-            variant="secondary"
-            className="w-full md:w-auto"
-            onClick={() => void loadInquiries(search, status)}
-          >
+          <Button variant="secondary" className="w-full md:w-auto" onClick={applyFilters}>
             Apply
           </Button>
         </div>
@@ -118,7 +105,7 @@ export default function AdminInquiriesPage() {
 
       {loading ? <LoadingSpinner label="Loading inquiries" /> : null}
       {!loading && error ? (
-        <ErrorState message={error} onRetry={() => void loadInquiries()} />
+        <ErrorState message={error} onRetry={() => void inquiriesQuery.refetch()} />
       ) : null}
       {!loading && !error && inquiries.length === 0 ? (
         <EmptyState
@@ -136,64 +123,61 @@ export default function AdminInquiriesPage() {
             <span>Status</span>
           </div>
           <div className="divide-y divide-border">
-          {inquiries.map((inquiry) => {
-            const property = inquiry.property as string | InquiryPropertySummary | null;
-            return (
-              <article
-                key={inquiry._id}
-                className="p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <h2 className="font-display text-2xl text-charcoal">{inquiry.name}</h2>
-                    <p className="mt-1 text-sm text-charcoal-soft">
-                      {inquiry.email} · {inquiry.phone}
-                    </p>
-                    <p className="mt-2 text-sm text-stone">
-                      Property:{' '}
-                      <span className="text-charcoal">{getPropertyName(property)}</span>
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone">
-                      {formatDate(inquiry.createdAt)}
-                    </p>
+            {inquiries.map((inquiry) => {
+              const property = inquiry.property as string | InquiryPropertySummary | null;
+              return (
+                <article key={inquiry._id} className="p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h2 className="font-display text-2xl text-charcoal">{inquiry.name}</h2>
+                      <p className="mt-1 text-sm text-charcoal-soft">
+                        {inquiry.email} · {inquiry.phone}
+                      </p>
+                      <p className="mt-2 text-sm text-stone">
+                        Property:{' '}
+                        <span className="text-charcoal">{getPropertyName(property)}</span>
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-stone">
+                        {formatDate(inquiry.createdAt)}
+                      </p>
+                    </div>
+                    <StatusBadge status={inquiry.status} />
                   </div>
-                  <StatusBadge status={inquiry.status} />
-                </div>
 
-                <p className="mt-4 text-sm leading-relaxed text-charcoal-soft">
-                  {inquiry.message}
-                </p>
+                  <p className="mt-4 text-sm leading-relaxed text-charcoal-soft">
+                    {inquiry.message}
+                  </p>
 
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <label
-                    className="text-xs uppercase tracking-[0.14em] text-stone"
-                    htmlFor={`status-${inquiry._id}`}
-                  >
-                    Update status
-                  </label>
-                  <select
-                    id={`status-${inquiry._id}`}
-                    className="rounded-sm border border-border bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-gold"
-                    value={inquiry.status}
-                    disabled={updatingId === inquiry._id}
-                    onChange={(event) =>
-                      void handleStatusChange(
-                        inquiry._id,
-                        event.target.value as InquiryStatus
-                      )
-                    }
-                  >
-                    <option value="new">New</option>
-                    <option value="contacted">Contacted</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                  <span className="text-xs text-stone">
-                    Ref: {getPropertyId(property).slice(-6)}
-                  </span>
-                </div>
-              </article>
-            );
-          })}
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <label
+                      className="text-xs uppercase tracking-[0.14em] text-stone"
+                      htmlFor={`status-${inquiry._id}`}
+                    >
+                      Update status
+                    </label>
+                    <select
+                      id={`status-${inquiry._id}`}
+                      className="rounded-sm border border-border bg-white px-3 py-2 text-sm text-charcoal outline-none focus:border-gold"
+                      value={inquiry.status}
+                      disabled={updatingId === inquiry._id}
+                      onChange={(event) =>
+                        void handleStatusChange(
+                          inquiry._id,
+                          event.target.value as InquiryStatus
+                        )
+                      }
+                    >
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    <span className="text-xs text-stone">
+                      Ref: {getPropertyId(property).slice(-6)}
+                    </span>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       ) : null}
