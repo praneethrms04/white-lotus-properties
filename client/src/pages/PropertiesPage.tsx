@@ -1,50 +1,39 @@
-import { useEffect, useState } from 'react';
-import { fetchProperties } from '../api/properties';
+import { useState } from 'react';
 import PropertyCard from '../components/properties/PropertyCard';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 import Input from '../components/ui/Input';
 import { PropertyCardSkeleton } from '../components/ui/Skeleton';
-import type { Property, PropertySort } from '../types';
+import { useProperties } from '../hooks/queries/useProperties';
+import type { PropertyFilters, PropertySort } from '../types';
+
+const defaultFilters: PropertyFilters = {
+  sort: 'newest',
+  limit: 24,
+};
 
 export default function PropertiesPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [sort, setSort] = useState<PropertySort>('newest');
+  const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
 
-  async function loadProperties(
-    nextSearch = search,
-    nextBedrooms = bedrooms,
-    nextType = propertyType,
-    nextSort = sort
-  ): Promise<void> {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetchProperties({
-        search: nextSearch || undefined,
-        bedrooms: nextBedrooms ? Number(nextBedrooms) : undefined,
-        propertyType: nextType || undefined,
-        sort: nextSort,
-        limit: 24,
-      });
-      setProperties(response.data || []);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load properties';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+  const propertiesQuery = useProperties(filters);
+  const properties = propertiesQuery.data?.data || [];
+  const loading = propertiesQuery.isLoading;
+  const error = propertiesQuery.error?.message || '';
+
+  function applyFilters() {
+    setFilters({
+      search: search.trim() || undefined,
+      bedrooms: bedrooms ? Number(bedrooms) : undefined,
+      propertyType: propertyType || undefined,
+      sort,
+      limit: 24,
+    });
   }
-
-  useEffect(() => {
-    void loadProperties();
-  }, []);
 
   return (
     <div>
@@ -109,11 +98,7 @@ export default function PropertiesPage() {
             <option value="price_desc">Price: high to low</option>
           </Input>
           <div className="flex items-end">
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => void loadProperties(search, bedrooms, propertyType, sort)}
-            >
+            <Button variant="secondary" className="w-full" onClick={applyFilters}>
               Apply
             </Button>
           </div>
@@ -129,7 +114,7 @@ export default function PropertiesPage() {
           ) : null}
 
           {!loading && error ? (
-            <ErrorState message={error} onRetry={() => void loadProperties()} />
+            <ErrorState message={error} onRetry={() => void propertiesQuery.refetch()} />
           ) : null}
 
           {!loading && !error && properties.length === 0 ? (

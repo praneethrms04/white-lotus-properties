@@ -4,7 +4,7 @@ This document records how AI assistance was used during development.
 
 ## Tools used
 
-- Cursor Agent (Composer) for scaffolding, TypeScript migration, feature implementation, UI polish, and demo seeding
+- Cursor Agent (Composer) for scaffolding, TypeScript migration, feature implementation, UI polish, demo seeding, and TanStack Query migration
 
 ## How AI was used
 
@@ -46,6 +46,12 @@ This document records how AI assistance was used during development.
    - Added image `onError` fallbacks for public cards/detail gallery.
    - Updated README with architecture, seed commands, and demo workflow.
 
+8. **TanStack Query v5 migration**
+   - Installed `@tanstack/react-query` and `@tanstack/react-query-devtools` (devtools in development only).
+   - Added QueryClient defaults, centralized query keys, and dedicated query/mutation hooks.
+   - Migrated homepage, property listing/detail, admin property CRUD, inquiry form, and admin inquiry workflows off manual `useEffect` fetching.
+   - Preserved Axios API modules, UI states, and visual design; documented architecture in README.
+
 ## What was verified
 
 - Frontend and backend TypeScript checks
@@ -55,6 +61,7 @@ This document records how AI assistance was used during development.
 - Seed upsert repeatability (no duplicate demo counts)
 - Listing filters and pagination via API smoke checks
 - Sample Unsplash image URL availability (broken URLs replaced)
+- TanStack Query typecheck/build and live MongoDB workflow smoke checks after migration
 
 ## Guardrails followed
 

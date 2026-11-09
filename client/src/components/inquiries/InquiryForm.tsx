@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { createInquiry } from '../../api/inquiries';
+import { useCreateInquiry } from '../../hooks/mutations/useCreateInquiry';
 import { isValidEmail } from '../../utils/validation';
 import Alert from '../ui/Alert';
 import Button from '../ui/Button';
@@ -46,9 +46,9 @@ function validateForm(state: FormState): FormErrors {
 export default function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
   const [form, setForm] = useState<FormState>(initialState);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const createInquiryMutation = useCreateInquiry();
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -66,8 +66,7 @@ export default function InquiryForm({ propertyId, propertyName }: InquiryFormPro
     }
 
     try {
-      setSubmitting(true);
-      await createInquiry({
+      await createInquiryMutation.mutateAsync({
         property: propertyId,
         name: form.name.trim(),
         email: form.email.trim(),
@@ -80,8 +79,6 @@ export default function InquiryForm({ propertyId, propertyName }: InquiryFormPro
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unable to submit inquiry';
       setError(message);
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -138,8 +135,13 @@ export default function InquiryForm({ propertyId, propertyName }: InquiryFormPro
         required
       />
 
-      <Button type="submit" variant="gold" className="w-full" disabled={submitting}>
-        {submitting ? 'Sending…' : 'Submit inquiry'}
+      <Button
+        type="submit"
+        variant="gold"
+        className="w-full"
+        disabled={createInquiryMutation.isPending}
+      >
+        {createInquiryMutation.isPending ? 'Sending…' : 'Submit inquiry'}
       </Button>
     </form>
   );

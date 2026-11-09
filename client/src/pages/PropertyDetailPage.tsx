@@ -1,57 +1,46 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchProperties, fetchPropertyById } from '../api/properties';
 import InquiryForm from '../components/inquiries/InquiryForm';
 import PropertyCard from '../components/properties/PropertyCard';
 import ErrorState from '../components/ui/ErrorState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import StatusBadge from '../components/ui/StatusBadge';
-import type { Property } from '../types';
+import { useProperties } from '../hooks/queries/useProperties';
+import { useProperty } from '../hooks/queries/useProperty';
 import { formatPrice } from '../utils/format';
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
-  const [property, setProperty] = useState<Property | null>(null);
-  const [related, setRelated] = useState<Property[]>([]);
   const [activeImage, setActiveImage] = useState(0);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  async function loadProperty(): Promise<void> {
-    if (!id) {
-      setError('Property ID is missing');
-      setLoading(false);
-      return;
-    }
+  const propertyQuery = useProperty(id);
+  const property = propertyQuery.data?.data;
+  const locationPrefix = property?.location.split(',')[0]?.trim();
 
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetchPropertyById(id);
-      setProperty(response.data);
-      setActiveImage(0);
-      setFailedImages({});
-
-      const relatedResponse = await fetchProperties({
-        location: response.data.location.split(',')[0]?.trim(),
-        limit: 4,
-        sort: 'newest',
-      });
-      setRelated(
-        (relatedResponse.data || []).filter((item) => item._id !== response.data._id).slice(0, 3)
-      );
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load property';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const relatedQuery = useProperties(
+    {
+      location: locationPrefix,
+      limit: 4,
+      sort: 'newest',
+    },
+    { enabled: Boolean(locationPrefix) }
+  );
 
   useEffect(() => {
-    void loadProperty();
-  }, [id]);
+    setActiveImage(0);
+    setFailedImages({});
+  }, [id, property?._id]);
+
+  const related = (relatedQuery.data?.data || [])
+    .filter((item) => item._id !== property?._id)
+    .slice(0, 3);
+
+  const loading = propertyQuery.isLoading;
+  const error =
+    !id
+      ? 'Property ID is missing'
+      : propertyQuery.error?.message || '';
 
   if (loading) {
     return (
@@ -64,7 +53,7 @@ export default function PropertyDetailPage() {
   if (error) {
     return (
       <div className="px-6 py-16">
-        <ErrorState message={error} onRetry={() => void loadProperty()} />
+        <ErrorState message={error} onRetry={() => void propertyQuery.refetch()} />
       </div>
     );
   }

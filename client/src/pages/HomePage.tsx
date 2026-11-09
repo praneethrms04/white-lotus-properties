@@ -1,46 +1,33 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProperties } from '../api/properties';
 import PropertyCard from '../components/properties/PropertyCard';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 import { PropertyCardSkeleton } from '../components/ui/Skeleton';
 import { BRAND, BRAND_IMAGES } from '../constants/brand';
-import type { Property } from '../types';
+import { useProperties } from '../hooks/queries/useProperties';
+
+const featuredFilters = { featured: true, limit: 3, sort: 'newest' as const };
+const collectionFilters = { limit: 6, sort: 'newest' as const };
 
 export default function HomePage() {
-  const [featured, setFeatured] = useState<Property[]>([]);
-  const [collection, setCollection] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const featuredQuery = useProperties(featuredFilters);
+  const collectionQuery = useProperties(collectionFilters);
 
-  async function loadProperties(): Promise<void> {
-    try {
-      setLoading(true);
-      setError('');
+  const loading = featuredQuery.isLoading || collectionQuery.isLoading;
+  const error =
+    featuredQuery.error?.message ||
+    collectionQuery.error?.message ||
+    '';
 
-      const [featuredResponse, collectionResponse] = await Promise.all([
-        fetchProperties({ featured: true, limit: 3, sort: 'newest' }),
-        fetchProperties({ limit: 6, sort: 'newest' }),
-      ]);
+  const featuredList = featuredQuery.data?.data || [];
+  const collectionList = collectionQuery.data?.data || [];
+  const featured = featuredList.length > 0 ? featuredList : collectionList.slice(0, 3);
 
-      const featuredList = featuredResponse.data || [];
-      const collectionList = collectionResponse.data || [];
-
-      setFeatured(featuredList.length > 0 ? featuredList : collectionList.slice(0, 3));
-      setCollection(collectionList);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load properties';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+  function handleRetry() {
+    void featuredQuery.refetch();
+    void collectionQuery.refetch();
   }
-
-  useEffect(() => {
-    void loadProperties();
-  }, []);
 
   return (
     <div>
@@ -120,9 +107,7 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          {!loading && error ? (
-            <ErrorState message={error} onRetry={() => void loadProperties()} />
-          ) : null}
+          {!loading && error ? <ErrorState message={error} onRetry={handleRetry} /> : null}
 
           {!loading && !error && featured.length === 0 ? (
             <EmptyState
@@ -158,9 +143,9 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        {!loading && !error && collection.length > 0 ? (
+        {!loading && !error && collectionList.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {collection.map((property) => (
+            {collectionList.map((property) => (
               <PropertyCard key={`collection-${property._id}`} property={property} />
             ))}
           </div>

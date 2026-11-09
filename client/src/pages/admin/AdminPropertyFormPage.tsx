@@ -1,54 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { createProperty, fetchPropertyById, updateProperty } from '../../api/properties';
 import PropertyForm from '../../components/properties/PropertyForm';
 import Alert from '../../components/ui/Alert';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import type { Property, PropertyFormValues } from '../../types';
+import { useCreateProperty } from '../../hooks/mutations/useCreateProperty';
+import { useUpdateProperty } from '../../hooks/mutations/useUpdateProperty';
+import { useProperty } from '../../hooks/queries/useProperty';
+import type { PropertyFormValues } from '../../types';
 
 export default function AdminPropertyFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(isEdit);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    if (!isEdit || !id) return;
+  const propertyQuery = useProperty(id, { enabled: isEdit });
+  const createPropertyMutation = useCreateProperty();
+  const updatePropertyMutation = useUpdateProperty();
 
-    async function loadProperty() {
-      try {
-        setLoading(true);
-        setError('');
-        const response = await fetchPropertyById(id as string);
-        setProperty(response.data);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to load property';
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void loadProperty();
-  }, [id, isEdit]);
+  const property = propertyQuery.data?.data ?? null;
+  const loading = isEdit && propertyQuery.isLoading;
+  const error = propertyQuery.error?.message || '';
 
   async function handleSubmit(values: PropertyFormValues) {
     setSuccess('');
 
     if (isEdit && id) {
-      await updateProperty(id, values);
+      await updatePropertyMutation.mutateAsync({ id, payload: values });
       setSuccess('Property updated successfully.');
       navigate('/admin/properties');
       return;
     }
 
-    await createProperty(values);
+    await createPropertyMutation.mutateAsync(values);
     setSuccess('Property created successfully.');
     navigate('/admin/properties');
   }
@@ -58,7 +44,7 @@ export default function AdminPropertyFormPage() {
   if (isEdit && error) {
     return (
       <div className="space-y-4">
-        <ErrorState message={error} onRetry={() => window.location.reload()} />
+        <ErrorState message={error} onRetry={() => void propertyQuery.refetch()} />
         <Link to="/admin/properties">
           <Button variant="secondary">Back to properties</Button>
         </Link>

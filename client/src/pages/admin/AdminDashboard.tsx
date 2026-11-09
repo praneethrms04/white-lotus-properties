@@ -1,52 +1,37 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchInquiries } from '../../api/inquiries';
-import { fetchProperties } from '../../api/properties';
 import Button from '../../components/ui/Button';
 import ErrorState from '../../components/ui/ErrorState';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { useInquiries } from '../../hooks/queries/useInquiries';
+import { useProperties } from '../../hooks/queries/useProperties';
 
-interface DashboardStats {
-  properties: number;
-  available: number;
-  inquiries: number;
-  newInquiries: number;
-}
+const propertyFilters = { limit: 50 } as const;
+const inquiryFilters = { limit: 50 } as const;
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const propertiesQuery = useProperties(propertyFilters);
+  const inquiriesQuery = useInquiries(inquiryFilters);
 
-  async function loadStats(): Promise<void> {
-    try {
-      setLoading(true);
-      setError('');
-      const [propertiesResponse, inquiriesResponse] = await Promise.all([
-        fetchProperties({ limit: 50 }),
-        fetchInquiries({ limit: 50 }),
-      ]);
+  const loading = propertiesQuery.isLoading || inquiriesQuery.isLoading;
+  const error =
+    propertiesQuery.error?.message ||
+    inquiriesQuery.error?.message ||
+    '';
 
-      const properties = propertiesResponse.data || [];
-      const inquiries = inquiriesResponse.data || [];
+  const properties = propertiesQuery.data?.data || [];
+  const inquiries = inquiriesQuery.data?.data || [];
 
-      setStats({
-        properties: propertiesResponse.meta?.total ?? properties.length,
-        available: properties.filter((property) => property.status === 'available').length,
-        inquiries: inquiriesResponse.meta?.total ?? inquiries.length,
-        newInquiries: inquiries.filter((inquiry) => inquiry.status === 'new').length,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load dashboard';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+  const stats = {
+    properties: propertiesQuery.data?.meta?.total ?? properties.length,
+    available: properties.filter((property) => property.status === 'available').length,
+    inquiries: inquiriesQuery.data?.meta?.total ?? inquiries.length,
+    newInquiries: inquiries.filter((inquiry) => inquiry.status === 'new').length,
+  };
+
+  function handleRetry() {
+    void propertiesQuery.refetch();
+    void inquiriesQuery.refetch();
   }
-
-  useEffect(() => {
-    void loadStats();
-  }, []);
 
   return (
     <div className="space-y-8">
@@ -59,11 +44,9 @@ export default function AdminDashboard() {
       </div>
 
       {loading ? <LoadingSpinner label="Loading overview" /> : null}
-      {!loading && error ? (
-        <ErrorState message={error} onRetry={() => void loadStats()} />
-      ) : null}
+      {!loading && error ? <ErrorState message={error} onRetry={handleRetry} /> : null}
 
-      {!loading && !error && stats ? (
+      {!loading && !error ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: 'Properties', value: stats.properties },
