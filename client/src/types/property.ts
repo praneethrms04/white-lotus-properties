@@ -23,8 +23,10 @@ export interface Property {
 export type PropertySort = 'price_asc' | 'price_desc' | 'newest';
 
 export interface PropertyFilters {
+  search?: string;
   location?: string;
   bedrooms?: number;
+  status?: PropertyStatus;
   sort?: PropertySort;
   page?: number;
   limit?: number;

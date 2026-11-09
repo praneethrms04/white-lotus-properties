@@ -5,14 +5,7 @@ import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Property } from '../types';
-
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { formatPrice } from '../utils/format';
 
 export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([]);
