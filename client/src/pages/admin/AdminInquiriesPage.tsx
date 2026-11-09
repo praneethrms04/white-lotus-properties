@@ -128,13 +128,20 @@ export default function AdminInquiriesPage() {
       ) : null}
 
       {!loading && !error && inquiries.length > 0 ? (
-        <div className="space-y-4">
+        <div className="overflow-hidden border border-border bg-white/75">
+          <div className="hidden border-b border-border bg-ivory-deep/60 px-5 py-3 text-xs uppercase tracking-[0.14em] text-stone md:grid md:grid-cols-[1.1fr_1fr_0.8fr_0.7fr]">
+            <span>Buyer</span>
+            <span>Property</span>
+            <span>Submitted</span>
+            <span>Status</span>
+          </div>
+          <div className="divide-y divide-border">
           {inquiries.map((inquiry) => {
-            const property = inquiry.property as string | InquiryPropertySummary;
+            const property = inquiry.property as string | InquiryPropertySummary | null;
             return (
               <article
                 key={inquiry._id}
-                className="border border-border bg-white/70 p-5"
+                className="p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -187,6 +194,7 @@ export default function AdminInquiriesPage() {
               </article>
             );
           })}
+          </div>
         </div>
       ) : null}
     </div>

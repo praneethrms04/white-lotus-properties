@@ -70,6 +70,9 @@ export default function AdminPropertiesPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-gold">Inventory</p>
           <h1 className="mt-2 font-display text-4xl text-charcoal">Properties</h1>
+          <p className="mt-2 text-sm text-charcoal-soft">
+            Manage the public residence collection and listing details.
+          </p>
         </div>
         <Link to="/admin/properties/new">
           <Button>Add property</Button>
