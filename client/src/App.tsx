@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/HomePage';
+import PropertiesPage from './pages/PropertiesPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminPropertiesPage from './pages/admin/AdminPropertiesPage';
@@ -13,6 +14,7 @@ export default function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/properties" element={<PropertiesPage />} />
         <Route path="/properties/:id" element={<PropertyDetailPage />} />
       </Route>
 

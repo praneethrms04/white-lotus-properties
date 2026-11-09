@@ -1,7 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import type { FilterQuery, SortOrder } from 'mongoose';
-import Property, { type PropertyDocument } from '../models/Property.js';
-import { AppError } from '../utils/AppError.js';
+import * as propertyService from '../services/propertyService.js';
+import { getParamId } from '../utils/request.js';
 import type {
   CreatePropertyInput,
   PropertyQueryInput,
@@ -26,36 +25,17 @@ export const getProperties: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { location, bedrooms, sort = 'newest', page = 1, limit = 12 } = asQuery(req);
-
-    const filter: FilterQuery<PropertyDocument> = {};
-    if (location) {
-      filter.location = { $regex: location, $options: 'i' };
-    }
-    if (bedrooms !== undefined) {
-      filter.bedrooms = bedrooms;
-    }
-
-    let sortOption: Record<string, SortOrder> = { createdAt: -1 };
-    if (sort === 'price_asc') sortOption = { price: 1 };
-    if (sort === 'price_desc') sortOption = { price: -1 };
-
-    const skip = (page - 1) * limit;
-
-    const [properties, total] = await Promise.all([
-      Property.find(filter).sort(sortOption).skip(skip).limit(limit),
-      Property.countDocuments(filter),
-    ]);
+    const result = await propertyService.listProperties(asQuery(req));
 
     res.status(200).json({
       success: true,
       message: 'Properties retrieved successfully',
-      data: properties,
+      data: result.properties,
       meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit) || 1,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
       },
     });
   } catch (error: unknown) {
@@ -69,11 +49,7 @@ export const getPropertyById: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      throw new AppError('Property not found', 404);
-    }
+    const property = await propertyService.getPropertyById(getParamId(req));
 
     res.status(200).json({
       success: true,
@@ -91,7 +67,7 @@ export const createProperty: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const property = await Property.create(asCreateBody(req));
+    const property = await propertyService.createProperty(asCreateBody(req));
 
     res.status(201).json({
       success: true,
@@ -109,14 +85,7 @@ export const updateProperty: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const property = await Property.findByIdAndUpdate(req.params.id, asUpdateBody(req), {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!property) {
-      throw new AppError('Property not found', 404);
-    }
+    const property = await propertyService.updateProperty(getParamId(req), asUpdateBody(req));
 
     res.status(200).json({
       success: true,
@@ -134,11 +103,7 @@ export const deleteProperty: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const property = await Property.findByIdAndDelete(req.params.id);
-
-    if (!property) {
-      throw new AppError('Property not found', 404);
-    }
+    const property = await propertyService.deleteProperty(getParamId(req));
 
     res.status(200).json({
       success: true,

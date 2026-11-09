@@ -1,6 +1,7 @@
 import type {
   ApiSuccessResponse,
   Inquiry,
+  InquiryFilters,
   InquiryFormValues,
   InquiryStatus,
 } from '../types';
@@ -13,8 +14,15 @@ export async function createInquiry(
   return response.data;
 }
 
-export async function fetchInquiries(): Promise<ApiSuccessResponse<Inquiry[]>> {
-  const response = await api.get<ApiSuccessResponse<Inquiry[]>>('/inquiries');
+export async function fetchInquiries(
+  params: InquiryFilters = {}
+): Promise<ApiSuccessResponse<Inquiry[]>> {
+  const response = await api.get<ApiSuccessResponse<Inquiry[]>>('/inquiries', { params });
+  return response.data;
+}
+
+export async function fetchInquiryById(id: string): Promise<ApiSuccessResponse<Inquiry>> {
+  const response = await api.get<ApiSuccessResponse<Inquiry>>(`/inquiries/${id}`);
   return response.data;
 }
 

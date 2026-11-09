@@ -7,6 +7,7 @@ export type {
 } from './api';
 export type {
   Inquiry,
+  InquiryFilters,
   InquiryFormValues,
   InquiryPropertySummary,
   InquiryStatus,
