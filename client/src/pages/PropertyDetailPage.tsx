@@ -14,6 +14,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [related, setRelated] = useState<Property[]>([]);
   const [activeImage, setActiveImage] = useState(0);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -30,6 +31,7 @@ export default function PropertyDetailPage() {
       const response = await fetchPropertyById(id);
       setProperty(response.data);
       setActiveImage(0);
+      setFailedImages({});
 
       const relatedResponse = await fetchProperties({
         location: response.data.location.split(',')[0]?.trim(),
@@ -69,8 +71,10 @@ export default function PropertyDetailPage() {
 
   if (!property) return null;
 
-  const images = property.images?.length ? property.images : [];
-  const currentImage = images[activeImage];
+  const images = (property.images?.length ? property.images : []).filter(
+    (image) => !failedImages[image]
+  );
+  const currentImage = images[Math.min(activeImage, Math.max(images.length - 1, 0))];
 
   return (
     <div>
@@ -109,6 +113,9 @@ export default function PropertyDetailPage() {
                   src={currentImage}
                   alt={property.name}
                   className="h-full w-full object-cover"
+                  onError={() =>
+                    setFailedImages((current) => ({ ...current, [currentImage]: true }))
+                  }
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-stone">
@@ -131,7 +138,14 @@ export default function PropertyDetailPage() {
                     }`}
                     aria-label={`View image ${index + 1}`}
                   >
-                    <img src={image} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      onError={() =>
+                        setFailedImages((current) => ({ ...current, [image]: true }))
+                      }
+                    />
                   </button>
                 ))}
               </div>

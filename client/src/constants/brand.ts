@@ -5,7 +5,7 @@ export const BRAND_IMAGES = {
   lifestyle:
     'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=80',
   architecture:
-    'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdbc?auto=format&fit=crop&w=1800&q=80',
+    'https://images.unsplash.com/photo-1600047509358-9dc75507daeb?auto=format&fit=crop&w=1800&q=80',
 } as const;
 
 export const BRAND = {

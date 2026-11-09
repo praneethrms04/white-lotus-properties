@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Property } from '../../types';
 import { formatPrice } from '../../utils/format';
@@ -8,18 +9,23 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const primaryImage = property.images?.[0];
+  const showImage = Boolean(primaryImage) && !imageFailed;
+
   return (
     <Link
       to={`/properties/${property._id}`}
       className="group flex h-full flex-col overflow-hidden border border-border bg-white/55 transition duration-500 hover:border-gold/40"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-ivory-deep">
-        {property.images?.[0] ? (
+        {showImage ? (
           <img
-            src={property.images[0]}
+            src={primaryImage}
             alt={property.name}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
             loading="lazy"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm tracking-wide text-stone">
