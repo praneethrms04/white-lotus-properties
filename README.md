@@ -6,7 +6,7 @@ A full-stack luxury real estate application for exploring residences and managin
 
 ```text
 white-lotus-property-manager/
-├── client/     # React + TypeScript (Vite, Tailwind, React Router, Axios)
+├── client/     # React + TypeScript (Vite, Tailwind, React Router, Axios, TanStack Query)
 ├── server/     # Express + TypeScript (MongoDB/Mongoose, Zod, tsx)
 ├── package.json
 ├── README.md
@@ -16,10 +16,11 @@ white-lotus-property-manager/
 - **Public app:** homepage, property collection, property detail + inquiry form
 - **Admin portal:** dashboard, property CRUD, inquiry status management
 - **API:** REST JSON under `/api` with consistent `{ success, message, data, meta? }` responses
+- **Client server-state:** TanStack Query v5 (caching, mutations, invalidation)
 
 ## Stack
 
-- Frontend: React, TypeScript, Vite, Tailwind CSS, React Router, Axios
+- Frontend: React, TypeScript, Vite, Tailwind CSS, React Router, Axios, TanStack Query v5
 - Backend: Node.js, Express, TypeScript, MongoDB, Mongoose, Zod
 - Tooling: npm, tsx, concurrently
 
@@ -141,6 +142,68 @@ Use `http://localhost:5173` (not `127.0.0.1`) so CORS matches `CLIENT_URL`.
 6. Submit an inquiry from a property detail page.
 7. Review/update inquiries in `/admin/inquiries`.
 8. Manage inventory in `/admin/properties`.
+
+## TanStack Query (client)
+
+Server state is managed with **TanStack Query v5**. Axios remains the HTTP client (`client/src/api/*`). Local UI state (form drafts, dialogs, gallery index) stays in React `useState`.
+
+### QueryClient defaults
+
+Configured in `client/src/lib/queryClient.ts` and provided from `client/src/main.tsx`:
+
+| Option | Value |
+|---|---|
+| `staleTime` | 60 seconds |
+| `gcTime` | 5 minutes |
+| `retry` | 1 (queries) |
+| `refetchOnWindowFocus` | `false` |
+
+React Query Devtools load only when `import.meta.env.DEV` is true.
+
+### Query key conventions
+
+Centralized in `client/src/lib/queryKeys.ts`:
+
+```ts
+propertyKeys.all
+propertyKeys.lists()
+propertyKeys.list(filters)   // search, bedrooms, type, featured, sort, page, limit, …
+propertyKeys.detail(id)
+
+inquiryKeys.all
+inquiryKeys.lists()
+inquiryKeys.list(filters)    // search, status, page, limit, …
+inquiryKeys.detail(id)
+```
+
+Filter objects are part of the key so distinct filter combinations cache separately. Avoid inline unstable objects for keys outside these factories.
+
+### Query / mutation hooks
+
+| Hook | Purpose |
+|---|---|
+| `useProperties(filters)` | Property lists (public + admin) |
+| `useProperty(id)` | Property detail (`enabled` when `id` is present) |
+| `useInquiries(filters)` | Inquiry lists |
+| `useInquiry(id)` | Inquiry detail (available; unused by current UI) |
+| `useCreateProperty` / `useUpdateProperty` / `useDeleteProperty` | Admin property mutations |
+| `useCreateInquiry` | Public inquiry submission |
+| `useUpdateInquiryStatus` | Admin inquiry status updates |
+
+### Cache invalidation
+
+- Create/update/delete property → invalidate `propertyKeys.lists()`; update/delete also touch `propertyKeys.detail(id)`; delete also invalidates `inquiryKeys.lists()` (orphaned inquiry UI).
+- Create inquiry / update inquiry status → invalidate `inquiryKeys.lists()`; status update also writes `inquiryKeys.detail(id)`.
+
+### Example
+
+```ts
+const { data, isLoading, error } = useProperties({ featured: true, limit: 3, sort: 'newest' });
+const properties = data?.data ?? [];
+
+const createInquiry = useCreateInquiry();
+await createInquiry.mutateAsync({ property, name, email, phone, message });
+```
 
 ## Known limitations
 
