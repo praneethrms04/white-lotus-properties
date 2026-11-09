@@ -8,11 +8,12 @@ export interface InquiryPropertySummary {
   location: string;
   price: number;
   status: PropertyStatus;
+  images?: string[];
 }
 
 export interface Inquiry {
   _id: string;
-  property: string | InquiryPropertySummary | Property;
+  property: string | InquiryPropertySummary | Property | null;
   name: string;
   email: string;
   phone: string;
@@ -28,4 +29,11 @@ export interface InquiryFormValues {
   email: string;
   phone: string;
   message: string;
+}
+
+export interface InquiryFilters {
+  search?: string;
+  status?: InquiryStatus;
+  page?: number;
+  limit?: number;
 }
